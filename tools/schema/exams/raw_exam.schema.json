@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Raw Exam Schema",
+  "description": "Schema for raw exams ingested from UI, AI, or imported sources",
+  "type": "object",
+  "required": ["meta", "exam"],
+  "properties": {
+    "meta": { "$ref": "#/definitions/meta" },
+    "exam": { "$ref": "#/definitions/exam" }
+  },
+  "additionalProperties": false,
+
+  "definitions": {
+    "meta": {
+      "type": "object",
+      "required": ["raw_exam_uid", "source"],
+      "properties": {
+        "raw_exam_uid": { "type": "string" },
+        "source": {
+          "type": "string",
+          "enum": ["ui", "ai", "imported"]
+        },
+        "ingested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["INGESTED", "FAILED", "PASSED"]
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "exam": {
+      "type": "object",
+      "required": ["learning_objectives", "questions"],
+      "properties": {
+        "learning_objectives": {
+          "type": "object",
+          "required": ["subject", "grade", "unit"],
+          "properties": {
+            "subject": { "type": "string" },
+            "grade": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            },
+            "unit": { "type": "string" },
+            "knowledge": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "skills": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "competencies": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        },
+
+        "exam_blueprint": {
+          "type": "object",
+          "properties": {
+            "duration_minutes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "total_score": {
+              "type": "number",
+              "minimum": 1
+            },
+            "intended_cognitive_distribution": {
+              "type": "object",
+              "properties": {
+                "remember": { "type": "number" },
+                "understand": { "type": "number" },
+                "apply": { "type": "number" },
+                "analyze": { "type": "number" },
+                "evaluate": { "type": "number" },
+                "create": { "type": "number" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": true
+        },
+
+        "questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/question" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "question": {
+      "type": "object",
+      "required": ["type", "question"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["mcq", "short_answer", "essay", "essay_advanced"]
+        },
+        "question": { "type": "string" },
+
+        "options": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+
+        "answer": {},
+
+        "answers": {
+          "type": "array",
+          "items": {}
+        },
+
+        "rubric": {},
+
+        "max_score": { "type": "number" },
+
+        "maps_to": {
+          "type": "object",
+          "properties": {
+            "knowledge": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "skills": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "competencies": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        },
+
+        "cognitive": { "$ref": "#/definitions/cognitive" }
+      },
+      "additionalProperties": true
+    },
+
+    "cognitive": {
+      "type": "object",
+      "properties": {
+        "taxonomy": {
+          "type": "string",
+          "enum": ["bloom"]
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "remember",
+            "understand",
+            "apply",
+            "analyze",
+            "evaluate",
+            "create"
+          ]
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

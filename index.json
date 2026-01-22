@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "version": "1.0",
+    "last_updated": "ISO_DATETIME",
+    "total_library_exams": "integer"
+  },
+
+  "library_exams": [
+    {
+      "library_exam_uid": "string",
+      "linked_raw_exam_uid": "string | null",
+
+      "subject": "string",
+      "grade": "integer",
+
+      "unit": "string",
+      "description": "string | null",
+
+      "status": "DRAFT | PUBLISHED | DEPRECATED | ARCHIVED",
+
+      "cognitive_summary": {
+        "taxonomy": "bloom",
+        "distribution": {
+          "remember": "number",
+          "understand": "number",
+          "apply": "number",
+          "analyze": "number",
+          "evaluate": "number",
+          "create": "number"
+        },
+        "scale": 100
+      },
+
+      "total_questions": "integer",
+      "total_score": "number",
+
+      "path": "string",
+
+      "published_at": "ISO_DATETIME",
+      "updated_at": "ISO_DATETIME"
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+name: Exam Knowledge Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      exam_path:
+        description: "Path to input exam.json (from UI / AI / import)"
+        required: true
+      source:
+        description: "Source of exam (ui | ai | imported)"
+        required: true
+        default: "ui"
+      enable_ai_revise:
+        description: "Enable AI revise if validation fails"
+        required: false
+        default: "false"
+
+jobs:
+  exam-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ===============================
+      # 0. Checkout
+      # ===============================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ===============================
+      # 1. Python setup
+      # ===============================
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install jsonschema
+
+      # ===============================
+      # 2. INGEST → raw_database
+      # ===============================
+      - name: Ingest raw exam
+        id: ingest
+        run: |
+          uid=$(python tools/engine/exams/step1_preparation/ingest_raw_exam.py \
+            "${{ inputs.exam_path }}" \
+            "${{ inputs.source }}")
+          echo "raw_exam_uid=$uid" >> $GITHUB_OUTPUT
+          echo "Ingested RAW_EXAM_UID=$uid"
+
+      # ===============================
+      # 3. VALIDATE – SCHEMA
+      # ===============================
+      - name: Validate raw exam schema
+        run: |
+          python tools/engine/exams/step2_validation/validate_raw_exam.py \
+            raw_database/**/${{ steps.ingest.outputs.raw_exam_uid }}/v*.json
+
+      # ===============================
+      # 4. VALIDATE – LOGIC
+      # ===============================
+      - name: Validate logic
+        id: logic
+        continue-on-error: true
+        run: |
+          python tools/engine/exams/step2_validation/logic_validate.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      # ===============================
+      # 5. VALIDATE – PEDAGOGY
+      # ===============================
+      - name: Validate pedagogy
+        id: pedagogy
+        continue-on-error: true
+        run: |
+          python tools/engine/exams/step2_validation/pedagogy_validate.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      # ===============================
+      # 6. OPTIONAL AI REVISE
+      # ===============================
+      - name: AI Revise (optional)
+        if: |
+          inputs.enable_ai_revise == 'true' &&
+          (steps.logic.outcome == 'failure' || steps.pedagogy.outcome == 'failure')
+        run: |
+          python tools/engine/exams/step2_validation/exam_revise.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      # ===============================
+      # 7. RE-VALIDATE AFTER REVISE
+      # ===============================
+      - name: Re-validate after revise
+        if: inputs.enable_ai_revise == 'true'
+        run: |
+          python tools/engine/exams/step2_validation/logic_validate.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+          python tools/engine/exams/step2_validation/pedagogy_validate.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      # ===============================
+      # 8. PROMOTE → LIBRARY
+      # ===============================
+      - name: Promote exam to library
+        run: |
+          python tools/engine/exams/step3_save_to_database/promote_to_library.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      # ===============================
+      # 9. VALIDATE LIBRARY
+      # ===============================
+      - name: Validate library exam
+        run: |
+          python tools/engine/exams/step2_validation/validate_exam.py \
+            hocduongviet_library/**/exam_*.json
+
+      - name: Validate library index
+        run: |
+          python tools/engine/exams/step2_validation/validate_library_index.py \
+            hocduongviet_library/index.json
+
+      # ===============================
+      # 10. PUBLISH (LaTeX → PDF / DOCX)
+      # ===============================
+      - name: Export LaTeX
+        run: |
+          python tools/engine/exams/step4_publish_latex/exam_to_latex.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      - name: Build PDF
+        run: |
+          python tools/engine/exams/step5_publish_pdf/latex_to_pdf.py
+
+      # ===============================
+      # 11. COMMIT BACK TO GITHUB
+      # ===============================
+      - name: Commit changes
+        run: |
+          git config user.name "hocduongviet-bot"
+          git config user.email "bot@hocduongviet.org"
+
+          git add raw_database hocduongviet_library
+          git commit -m "Add validated exam ${{ steps.ingest.outputs.raw_exam_uid }}" || echo "Nothing to commit"
+          git push
+
+      # ===============================
+      # 12. UPLOAD ARTIFACT
+      # ===============================
+      - name: Upload exam PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: exam-pdf
+          path: |
+            **/*.pdf
+            **/*.docx

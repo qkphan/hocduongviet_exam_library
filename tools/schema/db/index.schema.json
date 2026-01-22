@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "last_updated": "ISO_DATETIME",
+  "raw_exams": [
+    {
+      "raw_exam_uid": "string",
+      "source": "ui | ai | imported",
+      "subject": "toan",
+      "grade": 11,
+      "chapter": "ch6",
+      "lesson": "ham-so-mu-va-logarit",
+
+      "created_at": "ISO_DATETIME",
+      "current_version": "v2",
+
+      "status": "INGESTED | VALIDATING | FAIL | PASS | ARCHIVED",
+      "latest_validate_result": "PASS | FAIL_SCHEMA | FAIL_LOGIC | FAIL_PEDAGOGY",
+
+      "path": "exams/ui/2026/01/raw-xxxx/",
+      "tags": ["ham-so", "logarit"],
+
+      "revision_count": 2,
+      "linked_exam_uid": null
+    }
+  ]
+}

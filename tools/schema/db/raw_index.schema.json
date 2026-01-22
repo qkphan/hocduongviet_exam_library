@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Raw Database Index",
+  "type": "object",
+  "required": ["version", "raw_exams"],
+  "properties": {
+    "version": { "type": "string" },
+    "last_updated": { "type": "string", "format": "date-time" },
+
+    "raw_exams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["raw_exam_uid", "source", "status", "path"],
+        "properties": {
+          "raw_exam_uid": { "type": "string" },
+          "source": { "type": "string", "enum": ["ui", "ai", "imported"] },
+
+          "subject": { "type": "string" },
+          "grade": { "type": "integer" },
+
+          "status": {
+            "type": "string",
+            "enum": ["INGESTED", "VALIDATING", "FAIL", "PASS", "ARCHIVED"]
+          },
+
+          "latest_validate_result": {
+            "type": "string",
+            "enum": ["PASS", "FAIL_SCHEMA", "FAIL_LOGIC", "FAIL_PEDAGOGY"]
+          },
+
+          "current_version": { "type": "string" },
+          "revision_count": { "type": "integer" },
+
+          "path": { "type": "string" },
+          "linked_exam_uid": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

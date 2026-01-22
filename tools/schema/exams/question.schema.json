@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "required": ["id", "type", "prompt", "points", "assessment"],
+  "properties": {
+    "id": { "type": "string" },
+    "type": {
+      "type": "string",
+      "enum": ["mcq", "tfq", "short_answer", "essay", "essay_advanced"]
+    },
+    "prompt": { "type": "string" },
+    "points": { "type": "number", "minimum": 0 },
+    "assessment": {
+      "$ref": "assessment.schema.json"
+    }
+  }
+}

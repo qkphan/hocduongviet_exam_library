@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "version": "string",
+    "last_updated": "ISO_DATETIME",
+    "total_raw_exams": "integer",
+    "total_library_exams": "integer"
+  },
+
+  "summary": {
+    "by_status": {
+      "INGESTED": "integer",
+      "VALIDATING": "integer",
+      "PASS": "integer",
+      "FAIL": "integer"
+    },
+
+    "by_source": {
+      "ui": "integer",
+      "ai": "integer",
+      "imported": "integer"
+    },
+
+    "by_subject": {
+      "<subject>": "integer"
+    },
+
+    "cognitive_distribution": {
+      "<cognitive_level>": "number"
+    }
+  },
+
+  "entries": [
+    {
+      "raw_exam_uid": "string",
+      "linked_exam_uid": "string | null",
+
+      "source": "ui | ai | imported",
+
+      "subject": "string",
+      "grade": "integer",
+
+      "chapter": "string | null",
+      "lesson": "string | null",
+
+      "status": "INGESTED | VALIDATING | FAIL | PASS | ARCHIVED",
+      "latest_validate_result":
+        "PASS | FAIL_SCHEMA | FAIL_LOGIC | FAIL_PEDAGOGY",
+
+      "created_at": "ISO_DATETIME",
+      "current_version": "string",
+      "revision_count": "integer",
+
+      "path": "string",
+
+      "tags": ["string"],
+
+      "cognitive_profile": {
+        "<cognitive_level>": "number"
+      }
+    }
+  ]
+}

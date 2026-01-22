@@ -1,0 +1,252 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Library Exam Schema",
+  "description": "Validated and standardized exam schema for community library",
+  "type": "object",
+  "required": ["meta", "exam"],
+  "properties": {
+    "meta": { "$ref": "#/definitions/meta" },
+    "exam": { "$ref": "#/definitions/exam" }
+  },
+  "additionalProperties": false,
+
+  "definitions": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "library_exam_uid",
+        "raw_exam_uid",
+        "validated_at",
+        "status",
+        "cognitive_summary"
+      ],
+      "properties": {
+        "library_exam_uid": {
+          "type": "string",
+          "description": "UID of exam in library"
+        },
+        "raw_exam_uid": {
+          "type": "string"
+        },
+        "validated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["LIBRARY"]
+        },
+        "cognitive_summary": {
+          "type": "object",
+          "description": "Distribution of cognitive levels",
+          "properties": {
+            "remember": { "type": "number" },
+            "understand": { "type": "number" },
+            "apply": { "type": "number" },
+            "analyze": { "type": "number" },
+            "evaluate": { "type": "number" },
+            "create": { "type": "number" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "exam": {
+      "type": "object",
+      "required": [
+        "subject",
+        "grade",
+        "chapter",
+        "title",
+        "questions"
+      ],
+      "properties": {
+        "subject": { "type": "string" },
+        "grade": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "chapter": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/question" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "question": {
+      "oneOf": [
+        { "$ref": "#/definitions/mcq" },
+        { "$ref": "#/definitions/short_answer" },
+        { "$ref": "#/definitions/essay" },
+        { "$ref": "#/definitions/essay_advanced" }
+      ]
+    },
+
+    "mcq": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "question",
+        "options",
+        "answer",
+        "cognitive"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "mcq" },
+        "question": { "type": "string" },
+        "options": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["id", "text", "is_correct"],
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "is_correct": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "answer": {
+          "type": "string",
+          "description": "ID of correct option"
+        },
+        "cognitive": { "$ref": "#/definitions/cognitive" }
+      },
+      "additionalProperties": false
+    },
+
+    "short_answer": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "question",
+        "answers",
+        "rubric",
+        "cognitive"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "short_answer" },
+        "question": { "type": "string" },
+        "answers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["text", "score"],
+            "properties": {
+              "text": { "type": "string" },
+              "score": { "type": "number", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "rubric": { "type": "string" },
+        "cognitive": { "$ref": "#/definitions/cognitive" }
+      },
+      "additionalProperties": false
+    },
+
+    "essay": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "question",
+        "expected_answer",
+        "rubric",
+        "max_score",
+        "cognitive"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "essay" },
+        "question": { "type": "string" },
+        "expected_answer": { "type": "string" },
+        "rubric": { "type": "string" },
+        "max_score": {
+          "type": "number",
+          "minimum": 1
+        },
+        "cognitive": { "$ref": "#/definitions/cognitive" }
+      },
+      "additionalProperties": false
+    },
+
+    "essay_advanced": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "question",
+        "expected_answer",
+        "rubric",
+        "max_score",
+        "cognitive"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "essay_advanced" },
+        "question": { "type": "string" },
+        "expected_answer": { "type": "string" },
+        "rubric": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["criterion", "score"],
+            "properties": {
+              "criterion": { "type": "string" },
+              "score": { "type": "number", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "max_score": {
+          "type": "number",
+          "minimum": 1
+        },
+        "cognitive": { "$ref": "#/definitions/cognitive" }
+      },
+      "additionalProperties": false
+    },
+
+    "cognitive": {
+      "type": "object",
+      "required": ["taxonomy", "level", "weight"],
+      "properties": {
+        "taxonomy": { "const": "bloom" },
+        "level": {
+          "type": "string",
+          "enum": [
+            "remember",
+            "understand",
+            "apply",
+            "analyze",
+            "evaluate",
+            "create"
+          ]
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0.1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

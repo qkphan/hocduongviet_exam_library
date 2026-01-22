@@ -1,0 +1,127 @@
+name: Exam Pipeline (Library-based)
+
+on:
+  workflow_dispatch:
+    inputs:
+      raw_exam_path:
+        description: "Path to raw_exam.json"
+        required: true
+      source:
+        description: "ui | ai | imported"
+        required: true
+      enable_ai_revise:
+        description: "Enable AI revise if validation fails"
+        required: false
+        default: "false"
+
+jobs:
+  exam-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install jsonschema
+
+      # ===============================
+      # STEP 1 – INGEST
+      # ===============================
+      - name: Ingest raw exam
+        id: ingest
+        run: |
+          uid=$(python tools/engine/exams/step1_preparation/ingest_raw_exam.py \
+            "${{ inputs.raw_exam_path }}" \
+            "${{ inputs.source }}")
+          echo "raw_exam_uid=$uid" >> $GITHUB_OUTPUT
+
+      # ===============================
+      # STEP 2 – VALIDATE RAW
+      # ===============================
+      - name: Validate raw exam
+        id: validate_raw
+        run: |
+          python tools/engine/exams/step2_validation/validate_raw_exam.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      # ===============================
+      # OPTIONAL AI REVISE
+      # ===============================
+      - name: AI revise
+        if: inputs.enable_ai_revise == 'true'
+        run: |
+          python tools/engine/exams/step2_validation/exam_revise.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      - name: Re-validate raw
+        if: inputs.enable_ai_revise == 'true'
+        run: |
+          python tools/engine/exams/step2_validation/validate_raw_exam.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}"
+
+      # ===============================
+      # STEP 3 – NORMALIZE → LIBRARY
+      # ===============================
+      - name: Normalize to library exam
+        id: normalize
+        run: |
+          lib_uid=$(python tools/engine/exams/step3_save_to_database/normalize_raw_to_library.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}")
+          echo "library_exam_uid=$lib_uid" >> $GITHUB_OUTPUT
+      
+      # ===============================
+      # STEP 3.5 – UPDATE INDEX
+      # ===============================
+      - name: Update index
+        run: |
+          python tools/engine/exams/step3_save_to_database/update_indexes.py \
+            "${{ steps.ingest.outputs.raw_exam_uid }}" \
+            "${{ steps.normalize.outputs.library_exam_uid }}"
+
+      # ===============================
+      # STEP 4 – VALIDATE LIBRARY
+      # ===============================
+      - name: Validate library exam
+        run: |
+          python tools/engine/exams/step2_validation/validate_library_exam.py \
+            "${{ steps.normalize.outputs.library_exam_uid }}"
+
+      # ===============================
+      # STEP 5 – EXPORT LATEX / PDF
+      # ===============================
+      - name: Export LaTeX
+        run: |
+          python tools/engine/exams/step4_publish_latex/library_exam_to_latex.py \
+            "${{ steps.normalize.outputs.library_exam_uid }}"
+
+      - name: Compile PDF
+        run: |
+          python tools/engine/exams/step5_publish_pdf/latex_to_pdf.py
+
+      # ===============================
+      # STEP 6 – COMMIT BACK
+      # ===============================
+      - name: Commit library updates
+        run: |
+          git config user.name "exam-bot"
+          git config user.email "exam-bot@hocduongviet"
+          git add raw_database hocduongviet_library
+          git commit -m "Add validated exam to library"
+          git push
+
+      # ===============================
+      # STEP 5.5 – UPLOAD ARTIFACT
+      # ===============================
+      - name: Upload exam PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: exam-${{ steps.normalize.outputs.library_exam_uid }}
+          path: |
+            hocduongviet_library/**/*.pdf
+            hocduongviet_library/**/*.docx
+

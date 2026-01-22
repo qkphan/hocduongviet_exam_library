@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Library Index",
+  "type": "object",
+  "required": ["version", "exams"],
+  "properties": {
+    "version": { "type": "string" },
+    "last_updated": { "type": "string", "format": "date-time" },
+
+    "exams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["exam_uid", "path", "status"],
+        "properties": {
+          "exam_uid": { "type": "string" },
+          "subject": { "type": "string" },
+          "grade": { "type": "integer" },
+          "difficulty": { "type": "string" },
+
+          "status": {
+            "type": "string",
+            "enum": ["PUBLISHED", "DEPRECATED"]
+          },
+
+          "path": { "type": "string" },
+          "source_raw_exam_uid": { "type": "string" }
+        }
+      }
+    }
+  }
+}
