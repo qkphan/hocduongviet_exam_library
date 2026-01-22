@@ -3,14 +3,23 @@ import sys
 from pathlib import Path
 from jsonschema import Draft7Validator
 
+# ==============================
+# CONSTANTS (CI CONTRACT)
+# ==============================
+RAW_EXAMS_DIR = Path("raw_exams")
 SCHEMA_PATH = Path("tools/schema/exams/raw_exam.schema.json")
 
-
-def load_json(path):
+# ==============================
+# UTILS
+# ==============================
+def load_json(path: Path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
+# ==============================
+# VALIDATORS
+# ==============================
 def validate_schema(data):
     schema = load_json(SCHEMA_PATH)
     validator = Draft7Validator(schema)
@@ -22,31 +31,32 @@ def validate_logic(exam):
     errors = []
     warnings = []
 
-    questions = exam["exam"]["questions"]
+    exam_obj = exam.get("exam", {})
+    questions = exam_obj.get("questions", [])
 
     for i, q in enumerate(questions, start=1):
         qid = q.get("id", f"Q{i}")
 
-        # MCQ: phải có options >= 4
-        if q["type"] == "mcq":
+        if q.get("type") == "mcq":
             options = q.get("options", [])
             if len(options) < 4:
                 errors.append(f"{qid}: MCQ must have at least 4 options")
 
-        # Cognitive khuyến nghị
         if "cognitive" not in q:
             warnings.append(f"{qid}: missing cognitive information")
 
-        # Mapping khuyến nghị
         if "maps_to" not in q:
             warnings.append(f"{qid}: missing knowledge/skill mapping")
 
     return errors, warnings
 
 
+# ==============================
+# MAIN (CI ENTRYPOINT)
+# ==============================
 def main():
     if not RAW_EXAMS_DIR.exists():
-        print("❌ raw_exams/ directory not found")
+        print(f"❌ raw_exams directory not found: {RAW_EXAMS_DIR}")
         return 1
 
     raw_files = sorted(RAW_EXAMS_DIR.glob("raw_*.json"))
@@ -56,10 +66,9 @@ def main():
         return 1
 
     overall_status = "PASSED"
-    reports = []
 
     for raw_exam_path in raw_files:
-        print(f"🔍 Validating {raw_exam_path.name}")
+        print(f"\n🔍 Validating {raw_exam_path.name}")
 
         data = load_json(raw_exam_path)
 
@@ -83,7 +92,7 @@ def main():
         with open(report_path, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
 
-        reports.append(report)
+        print(f"➡️ {raw_exam_path.name}: {status}")
 
     print(f"\nFINAL STATUS: {overall_status}")
     return 0 if overall_status == "PASSED" else 1
@@ -91,4 +100,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
