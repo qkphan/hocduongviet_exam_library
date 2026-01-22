@@ -1,5 +1,8 @@
 name: Exam Pipeline (Library-based)
 
+permissions:
+  contents: write
+  
 on:
   workflow_dispatch:
     inputs:
