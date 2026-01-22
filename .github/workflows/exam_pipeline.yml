@@ -29,6 +29,12 @@ jobs:
         run: |
           pip install jsonschema
 
+      - name: Install Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+
+
       # ===============================
       # STEP 1 – INGEST
       # ===============================
@@ -97,11 +103,28 @@ jobs:
       - name: Export LaTeX
         run: |
           python tools/engine/exams/step4_publish_latex/library_exam_to_latex.py \
-            "${{ steps.normalize.outputs.library_exam_uid }}"
+            "${{ steps.normalize.outputs.library_exam_uid }}" \
+            --output-dir exports/latex/${{ steps.normalize.outputs.library_exam_uid }}
 
       - name: Compile PDF
         run: |
-          python tools/engine/exams/step5_publish_pdf/latex_to_pdf.py
+          python tools/engine/exams/step5_publish_pdf/latex_to_pdf.py \
+            --input-dir exports/latex/${{ steps.normalize.outputs.library_exam_uid }} \
+            --output-dir exports/pdf/${{ steps.normalize.outputs.library_exam_uid }}
+
+
+      
+      # ===============================
+      # STEP 5.5 – UPLOAD ARTIFACT
+      # ===============================
+      - name: Upload exam files
+        uses: actions/upload-artifact@v4
+        with:
+          name: exam-${{ steps.normalize.outputs.library_exam_uid }}
+          path: |
+            exports/pdf/${{ steps.normalize.outputs.library_exam_uid }}/*.pdf
+            exports/docx/${{ steps.normalize.outputs.library_exam_uid }}/*.docx
+
 
       # ===============================
       # STEP 6 – COMMIT BACK
@@ -113,15 +136,3 @@ jobs:
           git add raw_database hocduongviet_library
           git commit -m "Add validated exam to library"
           git push
-
-      # ===============================
-      # STEP 5.5 – UPLOAD ARTIFACT
-      # ===============================
-      - name: Upload exam PDF
-        uses: actions/upload-artifact@v4
-        with:
-          name: exam-${{ steps.normalize.outputs.library_exam_uid }}
-          path: |
-            hocduongviet_library/**/*.pdf
-            hocduongviet_library/**/*.docx
-
