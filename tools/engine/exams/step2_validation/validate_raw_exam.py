@@ -44,40 +44,51 @@ def validate_logic(exam):
     return errors, warnings
 
 
-def main(raw_exam_input):
-    raw_exam_path = Path(raw_exam_input)
-
-    # Nếu chỉ truyền UID → tự map sang file JSON
-    if raw_exam_path.suffix != ".json":
-        raw_exam_path = Path("raw_exams") / f"{raw_exam_input}.json"
-
-    if not raw_exam_path.exists():
-        print(f"❌ Raw exam file not found: {raw_exam_path}")
+def main():
+    if not RAW_EXAMS_DIR.exists():
+        print("❌ raw_exams/ directory not found")
         return 1
 
-    data = load_json(raw_exam_path)
+    raw_files = sorted(RAW_EXAMS_DIR.glob("raw_*.json"))
 
-    schema_errors = validate_schema(data)
-    logic_errors, logic_warnings = validate_logic(data)
+    if not raw_files:
+        print("❌ No raw exam files found")
+        return 1
 
-    result = {
-        "status": "PASSED",
-        "schema_errors": schema_errors,
-        "logic_errors": logic_errors,
-        "warnings": logic_warnings,
-    }
+    overall_status = "PASSED"
+    reports = []
 
-    if schema_errors or logic_errors:
-        result["status"] = "FAILED"
+    for raw_exam_path in raw_files:
+        print(f"🔍 Validating {raw_exam_path.name}")
 
-    report_path = raw_exam_path.with_name("validation_report.json")
-    with open(report_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+        data = load_json(raw_exam_path)
 
-    print(f"VALIDATION STATUS: {result['status']}")
-    return 0 if result["status"] == "PASSED" else 1
+        schema_errors = validate_schema(data)
+        logic_errors, logic_warnings = validate_logic(data)
 
+        status = "PASSED"
+        if schema_errors or logic_errors:
+            status = "FAILED"
+            overall_status = "FAILED"
+
+        report = {
+            "raw_exam": raw_exam_path.name,
+            "status": status,
+            "schema_errors": schema_errors,
+            "logic_errors": logic_errors,
+            "warnings": logic_warnings,
+        }
+
+        report_path = raw_exam_path.with_suffix(".validation.json")
+        with open(report_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, ensure_ascii=False, indent=2)
+
+        reports.append(report)
+
+    print(f"\nFINAL STATUS: {overall_status}")
+    return 0 if overall_status == "PASSED" else 1
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1]))
+    sys.exit(main())
+
