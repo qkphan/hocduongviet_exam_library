@@ -1,0 +1,6 @@
+{
+  "stage": "schema",
+  "schema_errors": [
+    "Additional properties are not allowed ('_original_meta' was unexpected)"
+  ]
+}
