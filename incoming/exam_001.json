@@ -1,0 +1,200 @@
+{
+  "meta": {
+    "raw_exam_uid": "7e3b1c2a-9f8d-4b5c-8a1e-2f3a4b5c6d7e",
+    "source": "ai",
+    "ingested_at": "2026-01-22T08:39:10Z",
+    "status": "INGESTED",
+    "version": 1
+  },
+  "exam": {
+    "learning_objectives": {
+      "subject": "Sinh học",
+      "grade": 12,
+      "unit": "Cơ chế di truyền và biến dị",
+      "knowledge": [
+        "Cấu trúc DNA",
+        "Quá trình phiên mã",
+        "Quá trình dịch mã",
+        "Đột biến gen"
+      ],
+      "skills": [
+        "Phân tích sơ đồ di truyền",
+        "Tính toán số lượng nucleotide",
+        "Giải quyết bài tập về mã di truyền"
+      ],
+      "competencies": [
+        "Năng lực nhận thức sinh học",
+        "Năng lực tìm hiểu thế giới sống"
+      ]
+    },
+    "exam_blueprint": {
+      "duration_minutes": 45,
+      "total_score": 10.0,
+      "intended_cognitive_distribution": {
+        "remember": 0.3,
+        "understand": 0.4,
+        "apply": 0.2,
+        "analyze": 0.1
+      }
+    },
+    "questions": [
+      {
+        "id": "Q001",
+        "type": "mcq",
+        "question": "Loại nucleotide nào sau đây không phải là đơn phân cấu tạo nên phân tử DNA?",
+        "options": [
+          "Adenine (A)",
+          "Thymine (T)",
+          "Uracil (U)",
+          "Guanine (G)"
+        ],
+        "answer": 2,
+        "max_score": 1.0,
+        "cognitive": {
+          "taxonomy": "bloom",
+          "level": "remember"
+        },
+        "maps_to": {
+          "knowledge": ["Cấu trúc DNA"]
+        }
+      },
+      {
+        "id": "Q002",
+        "type": "mcq",
+        "question": "Trong quá trình nhân đôi DNA, enzyme helicase có vai trò chủ yếu nào sau đây?",
+        "options": [
+          "Xúc tác tổng hợp mạch DNA mới",
+          "Nối các đoạn Okazaki",
+          "Tháo xoắn và tách hai mạch đơn của DNA",
+          "Nhận biết và bám vào điểm khởi đầu nhân đôi"
+        ],
+        "answer": 2,
+        "max_score": 1.0,
+        "cognitive": {
+          "taxonomy": "bloom",
+          "level": "remember"
+        },
+        "maps_to": {
+          "knowledge": ["Cấu trúc DNA"]
+        }
+      },
+      {
+        "id": "Q003",
+        "type": "mcq",
+        "question": "Một bộ ba mã hóa (codon) trên phân tử mARN được cấu tạo từ bao nhiêu nucleotide?",
+        "options": [
+          "1 nucleotide",
+          "2 nucleotide",
+          "3 nucleotide",
+          "4 nucleotide"
+        ],
+        "answer": 2,
+        "max_score": 1.0,
+        "cognitive": {
+          "taxonomy": "bloom",
+          "level": "remember"
+        },
+        "maps_to": {
+          "knowledge": ["Quá trình dịch mã"]
+        }
+      },
+      {
+        "id": "Q004",
+        "type": "mcq",
+        "question": "Ở sinh vật nhân thực, quá trình phiên mã diễn ra chủ yếu tại vị trí nào trong tế bào?",
+        "options": [
+          "Tế bào chất",
+          "Nhân tế bào",
+          "Ribosome",
+          "Màng sinh chất"
+        ],
+        "answer": 1,
+        "max_score": 1.0,
+        "cognitive": {
+          "taxonomy": "bloom",
+          "level": "understand"
+        },
+        "maps_to": {
+          "knowledge": ["Quá trình phiên mã"]
+        }
+      },
+      {
+        "id": "Q005",
+        "type": "mcq",
+        "question": "Đặc điểm nào của mã di truyền cho phép nhiều bộ ba khác nhau cùng mã hóa cho một loại amino acid?",
+        "options": [
+          "Tính đặc hiệu",
+          "Tính phổ biến",
+          "Tính thoái hóa",
+          "Tính liên tục"
+        ],
+        "answer": 2,
+        "max_score": 1.0,
+        "cognitive": {
+          "taxonomy": "bloom",
+          "level": "understand"
+        },
+        "maps_to": {
+          "knowledge": ["Quá trình dịch mã"]
+        }
+      },
+      {
+        "id": "Q006",
+        "type": "short_answer",
+        "question": "Một đoạn gen có trình tự mạch khuôn là 3'-TAC GGG AAA CTA-5'. Hãy xác định trình tự các nucleotide của đoạn mARN được phiên mã từ đoạn gen này.",
+        "answer": "5'-AUG CCC UUU GAU-3'",
+        "max_score": 1.5,
+        "cognitive": {
+          "taxonomy": "bloom",
+          "level": "apply"
+        },
+        "maps_to": {
+          "knowledge": ["Quá trình phiên mã"],
+          "skills": ["Giải quyết bài tập về mã di truyền"]
+        }
+      },
+      {
+        "id": "Q007",
+        "type": "short_answer",
+        "question": "Một gen có tổng số 1200 nucleotide ở vùng mã hóa. Hỏi phân tử mARN được phiên mã từ gen này có bao nhiêu bộ ba mã hóa amino acid?",
+        "answer": "200 bộ ba",
+        "max_score": 1.5,
+        "cognitive": {
+          "taxonomy": "bloom",
+          "level": "apply"
+        },
+        "maps_to": {
+          "knowledge": ["Cấu trúc DNA", "Quá trình dịch mã"],
+          "skills": ["Tính toán số lượng nucleotide"]
+        }
+      },
+      {
+        "id": "Q008",
+        "type": "essay",
+        "question": "Phân tích sự khác nhau về hậu quả đối với cấu trúc protein giữa đột biến gen dạng thay thế một cặp nucleotide và đột biến gen dạng mất một cặp nucleotide.",
+        "answer": "Đột biến thay thế một cặp nucleotide có thể làm thay đổi một amino acid trong chuỗi polypeptide hoặc không làm thay đổi amino acid do tính thoái hóa của mã di truyền. Trong khi đó, đột biến mất một cặp nucleotide thường gây ra hiện tượng dịch khung đọc kể từ vị trí đột biến, dẫn đến thay đổi hàng loạt amino acid phía sau và thường làm protein mất hoặc giảm mạnh chức năng sinh học.",
+        "rubric": {
+          "criteria": [
+            {
+              "description": "Phân tích đúng hậu quả của đột biến thay thế cặp nucleotide.",
+              "score": 1.0
+            },
+            {
+              "description": "Phân tích đúng hậu quả của đột biến mất cặp nucleotide (dịch khung đọc).",
+              "score": 1.0
+            }
+          ]
+        },
+        "max_score": 2.0,
+        "cognitive": {
+          "taxonomy": "bloom",
+          "level": "analyze"
+        },
+        "maps_to": {
+          "knowledge": ["Đột biến gen"],
+          "competencies": ["Năng lực nhận thức sinh học"]
+        }
+      }
+    ]
+  }
+}
