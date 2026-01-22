@@ -2,124 +2,156 @@ import json
 import sys
 from pathlib import Path
 from jsonschema import Draft7Validator
+from utils_failed_writer import write_failed_exam
 
-# ==============================
-# CONSTANTS (PIPELINE CONTRACT)
-# ==============================
-RAW_DB_EXAMS_DIR = Path("raw_database/exams")
+# ===============================
+# CONSTANTS
+# ===============================
+RAW_EXAMS_ROOT = Path("raw_database/exams")
 SCHEMA_PATH = Path("tools/schema/exams/raw_exam.schema.json")
 
-# ==============================
+# ===============================
 # UTILS
-# ==============================
+# ===============================
 def load_json(path: Path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
-def abort(msg):
-    print(f"❌ {msg}", file=sys.stderr)
-    return 1
-
-
-# ==============================
-# VALIDATORS
-# ==============================
-def validate_schema(data):
+def validate_schema(data: dict):
     schema = load_json(SCHEMA_PATH)
     validator = Draft7Validator(schema)
-    errors = sorted(validator.iter_errors(data), key=lambda e: e.path)
-    return [e.message for e in errors]
+    return [e.message for e in validator.iter_errors(data)]
 
-
-def validate_logic(exam):
+def validate_logic(data: dict):
     errors = []
     warnings = []
 
-    exam_obj = exam.get("exam", {})
-    questions = exam_obj.get("questions", [])
+    exam = data.get("exam", {})
+    questions = exam.get("questions", [])
+
+    if not questions:
+        errors.append("Exam must contain at least one question")
+        return errors, warnings
 
     for i, q in enumerate(questions, start=1):
         qid = q.get("id", f"Q{i}")
+        qtype = q.get("type")
 
-        # MCQ phải có >= 4 options
-        if q.get("type") == "mcq":
+        if not qtype:
+            errors.append(f"{qid}: missing question type")
+            continue
+
+        if qtype == "mcq":
             options = q.get("options", [])
             if len(options) < 4:
                 errors.append(f"{qid}: MCQ must have at least 4 options")
 
-        # Khuyến nghị metadata
+            if q.get("correct") is None:
+                errors.append(f"{qid}: MCQ missing correct answer")
+
         if "cognitive" not in q:
-            warnings.append(f"{qid}: missing cognitive information")
+            warnings.append(f"{qid}: missing cognitive level")
 
         if "maps_to" not in q:
             warnings.append(f"{qid}: missing knowledge/skill mapping")
 
     return errors, warnings
 
-
-# ==============================
-# FILE DISCOVERY (KEY CHANGE)
-# ==============================
-def discover_ingested_exams():
-    """
-    Find all ingested raw exam versions (v*.json)
-    Example path:
-    raw_database/exams/ai/2026/01/raw_xxx/v1.json
-    """
-    if not RAW_DB_EXAMS_DIR.exists():
-        return []
-
-    return sorted(RAW_DB_EXAMS_DIR.glob("**/v*.json"))
-
-
-# ==============================
-# MAIN (CI ENTRYPOINT)
-# ==============================
+# ===============================
+# MAIN
+# ===============================
 def main():
-    raw_exam_files = discover_ingested_exams()
+    if not RAW_EXAMS_ROOT.exists():
+        print("❌ raw_database/exams not found")
+        return 1
 
-    if not raw_exam_files:
-        return abort("No ingested raw exams found in raw_database/exams")
+    raw_files = sorted(RAW_EXAMS_ROOT.glob("**/v*.json"))
+    if not raw_files:
+        print("❌ No raw exam files found")
+        return 1
 
-    overall_status = "PASSED"
+    overall_failed = False
 
-    for exam_path in raw_exam_files:
-        print(f"\n🔍 Validating {exam_path}")
+    for raw_exam_path in raw_files:
+        print(f"\n🔍 Validating {raw_exam_path}")
 
+        fs_uid = raw_exam_path.parent.name  # raw_exam_uid từ folder
+
+        # -----------------------
+        # Stage 1: Load JSON
+        # -----------------------
         try:
-            data = load_json(exam_path)
+            data = load_json(raw_exam_path)
         except Exception as e:
-            print(f"❌ Failed to load JSON: {e}")
-            overall_status = "FAILED"
+            write_failed_exam(
+                raw_exam_path=raw_exam_path,
+                raw_exam_uid=fs_uid,
+                validation_report={
+                    "stage": "load",
+                    "error": str(e),
+                },
+            )
+            print("❌ FAILED (load)")
+            overall_failed = True
             continue
 
+        json_uid = data.get("meta", {}).get("raw_exam_uid")
+
+        # -----------------------
+        # Stage 2: UID consistency
+        # -----------------------
+        if json_uid != fs_uid:
+            write_failed_exam(
+                raw_exam_path=raw_exam_path,
+                raw_exam_uid=fs_uid,
+                validation_report={
+                    "stage": "uid_mismatch",
+                    "filesystem_uid": fs_uid,
+                    "json_uid": json_uid,
+                },
+            )
+            print("❌ FAILED (uid mismatch)")
+            overall_failed = True
+            continue
+
+        # -----------------------
+        # Stage 3: Schema
+        # -----------------------
         schema_errors = validate_schema(data)
-        logic_errors, logic_warnings = validate_logic(data)
+        if schema_errors:
+            write_failed_exam(
+                raw_exam_path=raw_exam_path,
+                raw_exam_uid=fs_uid,
+                validation_report={
+                    "stage": "schema",
+                    "schema_errors": schema_errors,
+                },
+            )
+            print("❌ FAILED (schema)")
+            overall_failed = True
+            continue
 
-        status = "PASSED"
-        if schema_errors or logic_errors:
-            status = "FAILED"
-            overall_status = "FAILED"
+        # -----------------------
+        # Stage 4: Logic
+        # -----------------------
+        logic_errors, warnings = validate_logic(data)
+        if logic_errors:
+            write_failed_exam(
+                raw_exam_path=raw_exam_path,
+                raw_exam_uid=fs_uid,
+                validation_report={
+                    "stage": "logic",
+                    "logic_errors": logic_errors,
+                    "warnings": warnings,
+                },
+            )
+            print("❌ FAILED (logic)")
+            overall_failed = True
+            continue
 
-        report = {
-            "raw_exam_uid": data.get("meta", {}).get("raw_exam_uid"),
-            "source": data.get("meta", {}).get("source"),
-            "version": exam_path.name,
-            "status": status,
-            "schema_errors": schema_errors,
-            "logic_errors": logic_errors,
-            "warnings": logic_warnings,
-        }
+        print("✅ PASSED")
 
-        report_path = exam_path.with_name("validation_report.json")
-        with open(report_path, "w", encoding="utf-8") as f:
-            json.dump(report, f, ensure_ascii=False, indent=2)
-
-        print(f"➡️ {exam_path}: {status}")
-
-    print(f"\nFINAL STATUS: {overall_status}")
-    return 0 if overall_status == "PASSED" else 1
+    return 1 if overall_failed else 0
 
 
 if __name__ == "__main__":

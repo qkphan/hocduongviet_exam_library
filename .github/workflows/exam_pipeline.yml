@@ -55,6 +55,20 @@ jobs:
           python tools/engine/exams/step2_validation/validate_raw_exam.py \
             "${{ steps.ingest.outputs.raw_exam_uid }}"
 
+
+      # ===============================
+      # 🔥 COMMIT FAILED RAW EXAMS
+      # ===============================
+      - name: Commit failed exams
+        if: failure()
+        run: |
+          git config user.name "exam-bot"
+          git config user.email "exam-bot@users.noreply.github.com"
+          git add raw_database/failed
+          git commit -m "❌ Store failed raw exams"
+          git push
+
+
       # ===============================
       # OPTIONAL AI REVISE
       # ===============================
@@ -96,7 +110,7 @@ jobs:
         run: |
           python tools/engine/exams/step2_validation/validate_library_exam.py \
             "${{ steps.normalize.outputs.library_exam_uid }}"
-
+   
       # ===============================
       # STEP 5 – EXPORT LATEX / PDF
       # ===============================
