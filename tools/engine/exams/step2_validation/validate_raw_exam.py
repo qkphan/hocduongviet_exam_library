@@ -44,7 +44,17 @@ def validate_logic(exam):
     return errors, warnings
 
 
-def main(raw_exam_path):
+def main(raw_exam_input):
+    raw_exam_path = Path(raw_exam_input)
+
+    # Nếu chỉ truyền UID → tự map sang file JSON
+    if raw_exam_path.suffix != ".json":
+        raw_exam_path = Path("raw_exams") / f"{raw_exam_input}.json"
+
+    if not raw_exam_path.exists():
+        print(f"❌ Raw exam file not found: {raw_exam_path}")
+        return 1
+
     data = load_json(raw_exam_path)
 
     schema_errors = validate_schema(data)
@@ -60,12 +70,13 @@ def main(raw_exam_path):
     if schema_errors or logic_errors:
         result["status"] = "FAILED"
 
-    report_path = Path(raw_exam_path).with_name("validation_report.json")
+    report_path = raw_exam_path.with_name("validation_report.json")
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     print(f"VALIDATION STATUS: {result['status']}")
     return 0 if result["status"] == "PASSED" else 1
+
 
 
 if __name__ == "__main__":
